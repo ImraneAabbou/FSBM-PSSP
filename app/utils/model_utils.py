@@ -59,15 +59,9 @@ def plot_prediction(seq, probs):
     visible_labels = STRUCTURE_LABELS[:3]
     ax.set_yticklabels(visible_labels, fontfamily="monospace", fontsize=10, color="#F0EEF8")
     ax.set_xlabel("Position", color="#8B8FA8", fontsize=9)
-    ax.set_xticks([])
-
-    cbar = fig.colorbar(im, ax=ax, fraction=0.015, pad=0.02)
-    cbar.set_label("Confiance", color="#8B8FA8", fontsize=9)
-    cbar.ax.yaxis.set_tick_params(color="#8B8FA8")
-    cbar.outline.set_visible(False)
-    for t in cbar.ax.get_yticklabels():
-        t.set_color("#8B8FA8")
-        t.set_fontsize(8)
+    step = max(1, n // 20)
+    ax.set_xticks(range(0, n, step))
+    ax.tick_params(axis="x", colors="#8B8FA8", labelsize=8)
 
     fig.tight_layout()
     buf = BytesIO()

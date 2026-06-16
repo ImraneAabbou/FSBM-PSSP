@@ -19,12 +19,8 @@ def predict_api():
     if len(seq) < 5:
         return jsonify({"error": "Sequence must be at least 5 amino acids"}), 400
 
-    valid = "".join(c for c in seq if c in "ACDEFGHIKLMNPQRSTVWY")
-    if len(valid) < 5:
-        return jsonify({"error": "Invalid characters — use only standard 20 amino acids"}), 400
-
-    pred_seq, probs = predict(valid)
-    plot_b64 = plot_prediction(valid[:len(pred_seq)], probs)
+    pred_seq, probs = predict(seq)
+    plot_b64 = plot_prediction(seq[:len(pred_seq)], probs)
 
     return jsonify({
         "prediction": pred_seq,
