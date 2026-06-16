@@ -6,7 +6,17 @@ import numpy as np
 
 @bp.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", active_page="home")
+
+
+@bp.route("/predict")
+def predict_page():
+    return render_template("predict.html", active_page="predict")
+
+
+@bp.route("/about")
+def about_page():
+    return render_template("about.html", active_page="about")
 
 
 @bp.route("/api/predict", methods=["POST"])

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Prédire | ProtPredict{% endblock %}
+{% block content %}
+<div class="predictor-grid" style="max-width:1100px;margin:0 auto;padding:40px 40px 80px;">
+
+  <!-- INPUT PANEL -->
+  <div class="panel fade-up delay-1">
+    <div class="panel-label">Séquence d'entrée</div>
+    <textarea id="seqInput" placeholder="Colle ici ta séquence d'acides aminés...&#10;Ex: MKTAYIAKQRQISFVKSHFSRQLEERLG..."></textarea>
+
+    <div class="examples-row">
+      <button class="ex-btn" onclick="loadExample(0)">Protéine A</button>
+      <button class="ex-btn" onclick="loadExample(1)">Protéine B</button>
+      <button class="ex-btn" onclick="loadExample(2)">Protéine C</button>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="panel-label">Acides aminés valides</div>
+      <div class="aa-legend">
+        <span class="aa-pill">A</span><span class="aa-pill">C</span><span class="aa-pill">D</span>
+        <span class="aa-pill">E</span><span class="aa-pill">F</span><span class="aa-pill">G</span>
+        <span class="aa-pill">H</span><span class="aa-pill">I</span><span class="aa-pill">K</span>
+        <span class="aa-pill">L</span><span class="aa-pill">M</span><span class="aa-pill">N</span>
+        <span class="aa-pill">P</span><span class="aa-pill">Q</span><span class="aa-pill">R</span>
+        <span class="aa-pill">S</span><span class="aa-pill">T</span><span class="aa-pill">V</span>
+        <span class="aa-pill">W</span><span class="aa-pill">Y</span>
+      </div>
+    </div>
+
+    <button class="predict-btn" id="predictBtn" onclick="runPrediction()">
+      <span class="btn-text">Analyser la structure →</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="panel fade-up delay-2" id="outputPanel">
+    <div class="panel-label">Résultats de prédiction</div>
+
+    <div id="placeholderState" class="placeholder-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2" stroke-linecap="round"/>
+        <path d="M8 12h8M12 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>Lance une prédiction pour voir les résultats ici.</p>
+    </div>
+
+    <div id="resultsContent" style="display:none;">
+      <div class="seq-vis" style="margin-top:0;">
+        <div class="seq-title">Visualisation de la prédiction</div>
+        <img id="plotImage" style="width:100%;border-radius:8px;display:block;cursor:zoom-in;" alt="Graphique de prédiction" onclick="openZoom()">
+      </div>
+
+      <div class="conf-summary">
+        <span class="conf-label">Confiance moyenne</span>
+        <span class="conf-value" id="meanConf">—</span>
+      </div>
+
+      <div class="prob-chart" id="probsChart"></div>
+
+      <div class="seq-title" style="margin-top:16px;">Séquence analysée</div>
+      <div id="seqInfo" style="font-size:11px; color:var(--text-dim); font-family:'DM Mono',monospace; margin-bottom:4px;"></div>
+      <div id="seqVis" class="aa-display"></div>
+    </div>
+  </div>
+
+  <!-- ZOOM MODAL -->
+  <div id="zoomModal" onclick="closeZoom(event)" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);cursor:zoom-out;">
+    <img id="zoomImage" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:95vw;max-height:95vh;border-radius:12px;box-shadow:0 0 80px rgba(0,0,0,0.6);">
+  </div>
+
+</div><!-- /predictor-grid -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EXAMPLES = [
+  "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKRQTLGQHDFSAGEGLYTHMKALRPDEDRLSPLHSVYVDQWDWERVMGDGERQFSTLKSTVEAIWAGIKATEAAVSEEFGLAPFLPDQIHFVHSQELLSRYPDLDAKGRERAIAKDLGAVFLVGIGGKLSDGHRHDVRAPDYDDWSTPSELGHAGLNGDILVWNPVLEDAFELSSMGIRVDADTLKHQLALTGDED",
+  "ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWY",
+  "MAEGEITTFTALTEKFNLPPGNYKKPKLLYCSNGGHFLRILPDGTVDGTRDRSDQHIQLQLSAESVGEVYIKSTETGQYLAMDTSGLLYGSQTPNEECLFLERLEENHYNTYTSKKHAEKNWFVGLKKNGSCKRGPRTHYGQKAILFLPLPV"
+];
+
+const AA_LIST = "ACDEFGHIKLMNPQRSTVWY";
+
+function loadExample(i) {
+  document.getElementById('seqInput').value = EXAMPLES[i];
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const seq = params.get('seq');
+  if (seq) {
+    document.getElementById('seqInput').value = seq;
+    runPrediction();
+  }
+});
+
+function runPrediction() {
+  const seq = document.getElementById('seqInput').value.toUpperCase().trim().replace(/\s+/g, '');
+  if (!seq || seq.length < 5) {
+    alert('Entre une séquence d\'au moins 5 acides aminés.');
+    return;
+  }
+  const valid = seq;
+  const invalid = valid.split('').filter(aa => !AA_LIST.includes(aa));
+  if (invalid.length) {
+    alert(`Caractères invalides détectés : ${[...new Set(invalid)].join(', ')}\nUtilise uniquement les 20 acides aminés standard.`);
+    return;
+  }
+
+  const btn = document.getElementById('predictBtn');
+  const placeholder = document.getElementById('placeholderState');
+  const results = document.getElementById('resultsContent');
+
+  btn.classList.add('loading');
+  btn.querySelector('.btn-text').textContent = 'Analyse en cours...';
+
+  fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sequence: seq })
+  })
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+    return data;
+  })
+  .then(data => {
+    const prediction = data.prediction;
+    const probs = data.probs;
+
+    placeholder.style.display = 'none';
+    results.style.display = 'block';
+
+    document.getElementById('plotImage').src = 'data:image/png;base64,' + data.plot;
+
+    const n = Math.min(valid.length, prediction.length);
+    const confs = [];
+    for (let i = 0; i < n; i++) confs.push(Math.max(...probs[i]));
+    const meanConf = confs.reduce((a, b) => a + b, 0) / confs.length;
+    document.getElementById('meanConf').textContent = (meanConf * 100).toFixed(1) + '%';
+
+    const avgProbs = [0, 0, 0];
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < 3; j++) avgProbs[j] += probs[i][j];
+    const avg = avgProbs.map(s => s / n);
+
+    const barNames = ['Hélice α (H)', 'Feuillet β (E)', 'Coil (C)'];
+    const barClasses = ['helix', 'sheet', 'coil'];
+    let html = '';
+    for (let j = 0; j < 3; j++) {
+      const pct = (avg[j] * 100).toFixed(1);
+      html += `<div class="prob-row">
+        <div class="prob-label">${barNames[j]}</div>
+        <div class="prob-track"><div class="prob-bar ${barClasses[j]}" style="width:${pct}%"></div></div>
+        <div class="prob-val">${pct}%</div>
+      </div>`;
+    }
+    document.getElementById('probsChart').innerHTML = html;
+
+    const labels = { 'H': 0, 'E': 1, 'C': 2 };
+    const letters = ['H', 'E', 'C'];
+    const display = valid.slice(0, 100);
+    const tileHtml = display.split('').map((aa, i) => {
+      const cls = i < n && labels[prediction[i]] !== undefined ? letters[labels[prediction[i]]] : '';
+      return `<span class="aa-tile ${cls}">${aa}</span>`;
+    }).join('');
+    document.getElementById('seqVis').innerHTML = tileHtml;
+    const suffix = valid.length > 100 ? ` … +${valid.length - 100} AA` : '';
+    document.getElementById('seqInfo').textContent = `${valid.length} acides aminés analysés${suffix}`;
+
+    btn.classList.remove('loading');
+    btn.querySelector('.btn-text').textContent = 'Analyser la structure →';
+  })
+  .catch(err => {
+    alert(err.message);
+    btn.classList.remove('loading');
+    btn.querySelector('.btn-text').textContent = 'Analyser la structure →';
+  });
+}
+
+function openZoom() {
+  const src = document.getElementById('plotImage').src;
+  if (!src || src === window.location.href) return;
+  document.getElementById('zoomImage').src = src;
+  document.getElementById('zoomModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeZoom(event) {
+  if (event.target !== document.getElementById('zoomImage')) {
+    document.getElementById('zoomModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('zoomModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+});
+</script>
+{% endblock %}

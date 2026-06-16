@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}À propos | ProtPredict{% endblock %}
+{% block content %}
+<section class="about-section fade-up">
+  <h1 style="margin-bottom:24px;">À propos du <em>projet</em></h1>
+
+  <p>
+    <strong class="highlight">ProtPredict</strong> est un prototype de prédiction de <strong class="highlight">structure secondaire des protéines</strong> basé sur l'intelligence artificielle. Le système analyse une séquence d'acides aminés et prédit, pour chaque résidu, sa conformation locale parmi trois classes possibles&nbsp;: <strong class="highlight">Hélice α (H)</strong>, <strong class="highlight">Feuillet β (E)</strong>, ou <strong class="highlight">Coil (C)</strong>.
+  </p>
+
+  <p>
+    Ce projet a été réalisé dans le cadre du <strong class="highlight">Projet de Fin de Module — Deep Learning</strong>, sous la supervision de l'équipe pédagogique du département informatique. Il vise à démontrer l'application des réseaux de neurones récurrents (LSTM bidirectionnels) à un problème concret de bioinformatique structurale.
+  </p>
+
+  <h2>Fonctionnement</h2>
+  <p>
+    Le modèle utilisé est un <strong class="highlight">LSTM bidirectionnel</strong> précédé d'une couche d'embedding et suivi d'une couche dense softmax. Il a été entraîné sur une base de données de séquences protéiques annotées en structures secondaires. L'entrée est une séquence d'acides aminés (format IUPAC) d'une longueur maximale de 128 résidus, et la sortie est une séquence de prédictions de structure secondaire de même longueur, accompagnée d'un score de confiance par position.
+  </p>
+  <p>
+    Le temps de prédiction est inférieur à 2 secondes sur un processeur standard, rendant l'outil accessible sans nécessiter de matériel spécialisé.
+  </p>
+
+  <h2>Équipe</h2>
+  <p style="margin-bottom:8px;">Projet réalisé par :</p>
+  <div class="about-team">
+    <div class="about-card">
+      <div class="name">Imrane Aabbou</div>
+      <div class="role">Étudiant en Informatique</div>
+      <div class="desc">Conception du modèle deep learning, développement backend et API, intégration et déploiement.</div>
+    </div>
+    <div class="about-card">
+      <div class="name">Aya Laghnam</div>
+      <div class="role">Étudiante en Informatique</div>
+      <div class="desc">Prétraitement des données, analyse exploratoire, conception de l'interface utilisateur et tests.</div>
+    </div>
+  </div>
+
+  <div class="fsbm-box">
+    <div class="fsbm-name">Faculté des Sciences Ben M'Sik</div>
+    <p>
+      Université Hassan II de Casablanca — Département d'Informatique.<br>
+      La faculté des sciences Ben M'Sik (FSBM) est l'un des établissements universitaires les plus dynamiques du Maroc, offrant une formation de qualité en sciences fondamentales et appliquées. Ce projet a été mené dans le cadre du cycle Licence en Informatique, option Sciences Mathématiques et Informatique.
+    </p>
+  </div>
+
+  <h2>Technologies utilisées</h2>
+  <p>
+    <strong class="highlight">Python</strong> (TensorFlow, Keras, NumPy, Matplotlib) pour l'entraînement et l'inférence du modèle. <strong class="highlight">Flask</strong> pour l'API backend. <strong class="highlight">HTML/CSS/JavaScript</strong> pour l'interface utilisateur. Le modèle a été entraîné sur un ensemble de données publiques de séquences protéiques structurées.
+  </p>
+
+  <h2>Perspectives</h2>
+  <p>
+    Ce prototype constitue une base pour des développements futurs&nbsp;: support de séquences plus longues, extension à 8 classes de structures secondaires (DSSP), intégration de mécanismes d'attention, et déploiement en tant qu'outil web public pour la communauté de bioinformatique.
+  </p>
+</section>
+{% endblock %}
